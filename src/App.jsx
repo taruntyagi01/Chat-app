@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import io from "socket.io-client";
 
-const socket = io("https://chat-app-backend-6v9e.onrender.com");
+const socket = io("https://chat-app-backend-6v9e.onrender.com", {
+  transports: ["websocket"],
+  });
+
 
 function Chat() {
   const [username, setUsername] = useState("");
@@ -23,7 +26,6 @@ function Chat() {
     setMessage("");
   };
 
-  socket.emit("typing", { sender: username, receiver: "all" });
 
   useEffect(() => {
     const handleMessage = (data) => {
@@ -34,6 +36,12 @@ function Chat() {
 
     return () => socket.off("receive_message", handleMessage);
   }, []);
+
+  useEffect(() => {
+  if (username) {
+    socket.emit("typing", { sender: username, receiver: "all" });
+  }
+}, [username]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
