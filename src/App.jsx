@@ -22,21 +22,26 @@ function Chat() {
       message,
     };
 
+
+    if (!username) {
+  alert("Enter username");
+  return;
+}
     socket.emit("send_message", msgData);
     setMessage("");
   };
 
 
   useEffect(() => {
-    const handleMessage = (data) => {
-      setMessageList((list) => [...list, data]);
-    };
+  socket.on("receive_message", (data) => {
+    console.log("📩 Received:", data); // ADD THIS
+    setMessageList((list) => [...list, data]);
+  });
 
-    socket.on("receive_message", handleMessage);
-
-    return () => socket.off("receive_message", handleMessage);
-  }, []);
-
+  return () => {
+    socket.off("receive_message");
+  };
+}, []);
   useEffect(() => {
   if (username) {
     socket.emit("typing", { sender: username, receiver: "all" });
@@ -46,6 +51,20 @@ function Chat() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messageList]);
+
+  useEffect(() => {
+  socket.on("connect", () => {
+    console.log("✅ Connected:", socket.id);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("❌ Disconnected");
+  });
+
+  socket.on("connect_error", (err) => {
+    console.log("❌ Connection Error:", err.message);
+  });
+}, []);
 
   // 🟢 Username screen
   if (!joined) {
@@ -70,8 +89,7 @@ function Chat() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#111b21]">
-      {/* Header */}
+<div className="min-h-screen flex flex-col bg-[#111b21]">      {/* Header */}
       <div className="bg-[#202c33] text-white p-4 font-semibold shadow">
         WhatsApp Clone
       </div>
@@ -97,17 +115,21 @@ function Chat() {
                   <p className="text-xs text-gray-400">{msg.username}</p>
                 )}
                 <p>{msg.message}</p>
+               
               </div>
             </div>
           );
         })}
         <div ref={messagesEndRef} />
       </div>
+      
 
       {/* Input */}
-      <div className="bg-[#202c33] p-3 flex gap-2">
-        <input
-          className="flex-1 p-2 rounded-full bg-[#2a3942] text-white outline-none"
+<div
+  className="bg-[#202c33] p-3 flex gap-2"
+  style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+>        <input
+          className="flex-1 p-2 mb-3.5 rounded-full bg-[#2a3942] text-white outline-none"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Message"
@@ -116,7 +138,7 @@ function Chat() {
 
         <button
           onClick={sendMessage}
-          className="bg-[#00a884] px-4 rounded-full text-white hover:bg-[#019874]"
+          className="bg-[#00a884] mb-3.5 px-4 rounded-full text-white hover:bg-[#019874]"
         >
           Send
         </button>
